@@ -1,29 +1,22 @@
-/* =========================
-   LOCOMOTIVE + GSAP SETUP
-========================= */
 function locomotiveAnimation() {
-  // Register ScrollTrigger plugin
   gsap.registerPlugin(ScrollTrigger);
 
-  // Initialize Locomotive Scroll on #main container
+  // Using Locomotive Scroll from Locomotive https://github.com/locomotivemtl/locomotive-scroll
+
   const locoScroll = new LocomotiveScroll({
     el: document.querySelector("#main"),
     smooth: true,
   });
-
-  // Sync Locomotive Scroll with ScrollTrigger
+  // each time Locomotive Scroll updates, tell ScrollTrigger to update too (sync positioning)
   locoScroll.on("scroll", ScrollTrigger.update);
 
-  // Tell ScrollTrigger how to handle scrolling when Locomotive hijacks it
+  // tell ScrollTrigger to use these proxy methods for the "#main" element since Locomotive Scroll is hijacking things
   ScrollTrigger.scrollerProxy("#main", {
     scrollTop(value) {
-      // Setter & getter for scroll position
       return arguments.length
         ? locoScroll.scrollTo(value, 0, 0)
         : locoScroll.scroll.instance.scroll.y;
-    },
-
-    // Define viewport size
+    }, // we don't have to define a scrollLeft because we're only scrolling vertically.
     getBoundingClientRect() {
       return {
         top: 0,
@@ -32,41 +25,31 @@ function locomotiveAnimation() {
         height: window.innerHeight,
       };
     },
-
-    // Mobile fix (transform vs fixed)
+    // LocomotiveScroll handles things completely differently on mobile devices - it doesn't even transform the container at all! So to get the correct behavior and avoid jitters, we should pin things with position: fixed on mobile. We sense it by checking to see if there's a transform applied to the container (the LocomotiveScroll-controlled element).
     pinType: document.querySelector("#main").style.transform
       ? "transform"
       : "fixed",
   });
 
-  // Update locomotive when ScrollTrigger refreshes
+  // each time the window updates, we should refresh ScrollTrigger and then update LocomotiveScroll.
   ScrollTrigger.addEventListener("refresh", () => locoScroll.update());
 
-  // Final refresh to apply everything correctly
+  // after everything is set up, refresh() ScrollTrigger and update LocomotiveScroll because padding may have been added for pinning, etc.
   ScrollTrigger.refresh();
 }
-
-/* =========================
-   LOADING / INTRO ANIMATION
-========================= */
 function loadingAnimation() {
   var tl = gsap.timeline();
-
-  // Animate loader text lines
   tl.from(".line h1", {
     y: 150,
     stagger: 0.25,
     duration: 0.6,
     delay: 0.5,
   });
-
-  // Percentage counter animation
   tl.from("#line1-part1", {
     opacity: 0,
     onStart: function () {
       var h5timer = document.querySelector("#line1-part1 h5");
       var grow = 0;
-
       setInterval(function () {
         if (grow < 100) {
           h5timer.innerHTML = grow++;
@@ -76,45 +59,31 @@ function loadingAnimation() {
       }, 27);
     },
   });
-
-  // Loader sub heading animation
   tl.to(".line h2", {
     animationName: "loaderAnime",
     opacity: 1,
   });
-
-  // Fade out loader
   tl.to("#loader", {
     opacity: 0,
     duration: 0.2,
     delay: 2.6,
   });
-
-  // Bring first page from bottom
   tl.from("#page1", {
     delay: 0.1,
     y: 1600,
     duration: 0.5,
     ease: Power4,
   });
-
-  // Remove loader from DOM
   tl.to("#loader", {
     display: "none",
   });
-
-  // Navbar fade-in
   tl.from("#nav", {
     opacity: 0,
   });
-
-  // Hero text reveal animation
   tl.from("#hero1 h1,#hero2 h1,#hero3 h2,#hero4 h1", {
     y: 140,
     stagger: 0.2,
   });
-
-  // Fade-in page sections
   tl.from(
     "#hero1, #page2",
     {
@@ -123,78 +92,67 @@ function loadingAnimation() {
     "-=1.2"
   );
 }
-
-/* =========================
-   CUSTOM CURSOR & VIDEO
-========================= */
 function cursorAnimation() {
-  // Custom mouse follower
   Shery.mouseFollower({
     skew: true,
     ease: "cubic-bezier(0.23, 1, 0.320, 1)",
     duration: 1,
   });
-
-  // Magnetic hover effect on nav items
   Shery.makeMagnet("#nav-part2 h4");
 
   var videoContainer = document.querySelector("#video-container");
   var video = document.querySelector("#video-container video");
-
-  // Move video cursor with mouse
   videoContainer.addEventListener("mouseenter", function () {
     videoContainer.addEventListener("mousemove", function (dets) {
       gsap.to(".mousefollower", {
         opacity: 0,
       });
-
       gsap.to("#video-cursor", {
         left: dets.x - 570,
         y: dets.y - 300,
       });
     });
   });
-
-  // Reset cursor on mouse leave
   videoContainer.addEventListener("mouseleave", function () {
     gsap.to(".mousefollower", {
       opacity: 1,
     });
-
     gsap.to("#video-cursor", {
       left: "70%",
       top: "-15%",
     });
   });
 
-  // Play / Pause video on click
   var flag = 0;
   videoContainer.addEventListener("click", function () {
     if (flag == 0) {
       video.play();
       video.style.opacity = 1;
-      document.querySelector("#video-cursor").innerHTML =
-        `<i class="ri-pause-mini-fill"></i>`;
-      gsap.to("#video-cursor", { scale: 0.5 });
+      document.querySelector(
+        "#video-cursor"
+      ).innerHTML = `<i class="ri-pause-mini-fill"></i>`;
+      gsap.to("#video-cursor", {
+        scale: 0.5,
+      });
       flag = 1;
     } else {
       video.pause();
       video.style.opacity = 0;
-      document.querySelector("#video-cursor").innerHTML =
-        `<i class="ri-play-mini-fill"></i>`;
-      gsap.to("#video-cursor", { scale: 1 });
+      document.querySelector(
+        "#video-cursor"
+      ).innerHTML = `<i class="ri-play-mini-fill"></i>`;
+      gsap.to("#video-cursor", {
+        scale: 1,
+      });
       flag = 0;
     }
   });
 }
-
-/* =========================
-   SHERY IMAGE EFFECT
-========================= */
 function sheryAnimation() {
   Shery.imageEffect(".image-div", {
     style: 5,
     gooey: true,
+    // debug:true,
     config: {
       a: { value: 2, range: [0, 30] },
       b: { value: 0.75, range: [-1, 1] },
@@ -221,67 +179,74 @@ function sheryAnimation() {
     },
   });
 }
-
-/* =========================
-   FLAG FOLLOW CURSOR
-========================= */
 function flagAnimation() {
-  // Flag follows mouse
   document.addEventListener("mousemove", function (dets) {
     gsap.to("#flag", {
       x: dets.x,
       y: dets.y,
     });
   });
-
-  // Show flag on hover
   document.querySelector("#hero3").addEventListener("mouseenter", function () {
-    gsap.to("#flag", { opacity: 1 });
+    gsap.to("#flag", {
+      opacity: 1,
+    });
   });
-
-  // Hide flag on leave
   document.querySelector("#hero3").addEventListener("mouseleave", function () {
-    gsap.to("#flag", { opacity: 0 });
+    gsap.to("#flag", {
+      opacity: 0,
+    });
   });
 }
-
-/* =========================
-   FOOTER TEXT ANIMATION
-========================= */
 function footerAnimation() {
   var clutter = "";
   var clutter2 = "";
-
-  // Split footer h1 text into spans
-  document.querySelector("#footer h1").textContent.split("").forEach(function (elem) {
-    clutter += `<span>${elem}</span>`;
-  });
+  document
+    .querySelector("#footer h1")
+    .textContent.split("")
+    .forEach(function (elem) {
+      clutter += `<span>${elem}</span>`;
+    });
   document.querySelector("#footer h1").innerHTML = clutter;
-
-  // Split footer h2 text into spans
-  document.querySelector("#footer h2").textContent.split("").forEach(function (elem) {
-    clutter2 += `<span>${elem}</span>`;
-  });
+  document
+    .querySelector("#footer h2")
+    .textContent.split("")
+    .forEach(function (elem) {
+      clutter2 += `<span>${elem}</span>`;
+    });
   document.querySelector("#footer h2").innerHTML = clutter2;
 
-  // Hover animation
-  document.querySelector("#footer-text").addEventListener("mouseenter", function () {
-    gsap.to("#footer h1 span", { opacity: 0, stagger: 0.05 });
-    gsap.to("#footer h2 span", { delay: 0.35, opacity: 1, stagger: 0.1 });
-  });
-
-  document.querySelector("#footer-text").addEventListener("mouseleave", function () {
-    gsap.to("#footer h1 span", { opacity: 1, stagger: 0.1, delay: 0.35 });
-    gsap.to("#footer h2 span", { opacity: 0, stagger: 0.05 });
-  });
+  document
+    .querySelector("#footer-text")
+    .addEventListener("mouseenter", function () {
+      gsap.to("#footer h1 span", {
+        opacity: 0,
+        stagger: 0.05,
+      });
+      gsap.to("#footer h2 span", {
+        delay: 0.35,
+        opacity: 1,
+        stagger: 0.1,
+      });
+    });
+  document
+    .querySelector("#footer-text")
+    .addEventListener("mouseleave", function () {
+      gsap.to("#footer h1 span", {
+        opacity: 1,
+        stagger: 0.1,
+        delay: 0.35,
+      });
+      gsap.to("#footer h2 span", {
+        opacity: 0,
+        stagger: 0.05,
+      });
+    });
 }
 
-/* =========================
-   FUNCTION CALLS
-========================= */
 loadingAnimation();
 cursorAnimation();
 locomotiveAnimation();
 sheryAnimation();
 flagAnimation();
+
 footerAnimation();
